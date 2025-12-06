@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Flask
+instance/
+.webassets-cache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 数据文件（已启用，数据会存储在 GitHub）
+# 如果不想将数据提交到 GitHub，取消下面的注释
+# ChatExport_*/
+# data.jsonl
+
+# 日志
+*.log
+

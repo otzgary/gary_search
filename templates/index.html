@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内容搜索</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .search-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .search-input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        #searchInput {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #searchInput:focus {
+            border-color: #667eea;
+        }
+
+        #searchButton {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #searchButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        #searchButton:active {
+            transform: translateY(0);
+        }
+
+        .stats {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+
+        .results {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            min-height: 200px;
+        }
+
+        .results-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            color: #333;
+            font-size: 1.2em;
+        }
+
+        .result-item {
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+            background: #f9f9f9;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .result-item.clickable {
+            cursor: pointer;
+        }
+
+        .result-item.clickable:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: #f0f0f0;
+        }
+
+        .result-item:not(.clickable):hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .result-source {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .result-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .result-date {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .result-content {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .result-url {
+            margin-top: 10px;
+        }
+
+        .result-url a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .result-url a:hover {
+            text-decoration: underline;
+        }
+
+        .tg-link-hint {
+            margin-top: 10px;
+            color: #667eea;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .result-item.clickable .tg-link-hint::before {
+            content: "👉 点击跳转到 Telegram 消息";
+        }
+
+        .no-results {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-size: 1.1em;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            padding: 40px;
+            font-size: 1.1em;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 内容搜索</h1>
+            <p>搜索你的 Telegram 和 Twitter 内容</p>
+        </div>
+
+        <div class="stats">
+            已加载 <strong>{{ total_count }}</strong> 条内容
+        </div>
+
+        <div class="search-box">
+            <div class="search-input-wrapper">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="输入关键词搜索..." 
+                    autocomplete="off"
+                >
+                <button id="searchButton">搜索</button>
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="no-results">
+                输入关键词开始搜索
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const resultsDiv = document.getElementById('results');
+
+        function performSearch() {
+            const query = searchInput.value.trim();
+            
+            if (!query) {
+                resultsDiv.innerHTML = '<div class="no-results">请输入搜索关键词</div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="loading">正在搜索</div>';
+
+            fetch(`/api/search?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayResults(data.results, data.count, query);
+                })
+                .catch(error => {
+                    resultsDiv.innerHTML = '<div class="no-results">搜索出错，请重试</div>';
+                    console.error('Error:', error);
+                });
+        }
+
+        function displayResults(results, count, query) {
+            if (count === 0) {
+                resultsDiv.innerHTML = '<div class="no-results">没有找到相关结果</div>';
+                return;
+            }
+
+            let html = `<div class="results-header">找到 <strong>${count}</strong> 条结果</div>`;
+
+            results.forEach((item, index) => {
+                const content = item.content.length > 500 
+                    ? item.content.substring(0, 500) + '...' 
+                    : item.content;
+                
+                const highlightedContent = highlightText(content, query);
+                const hasTgLink = item.tg_link && item.tg_link.trim() !== '';
+                const clickableClass = hasTgLink ? 'clickable' : '';
+                const tgLinkAttr = hasTgLink ? `data-tg-link="${item.tg_link}"` : '';
+                
+                html += `
+                    <div class="result-item ${clickableClass}" ${tgLinkAttr}>
+                        <span class="result-source">${item.source.toUpperCase()}</span>
+                        <div class="result-title">${item.title}</div>
+                        ${item.date ? `<div class="result-date">📅 ${item.date}</div>` : ''}
+                        <div class="result-content">${highlightedContent}</div>
+                        ${item.url ? `<div class="result-url"><a href="${item.url}" target="_blank" onclick="event.stopPropagation()">🔗 ${item.url}</a></div>` : ''}
+                        ${hasTgLink ? `<div class="tg-link-hint"></div>` : ''}
+                    </div>
+                `;
+            });
+
+            resultsDiv.innerHTML = html;
+            
+            // 为可点击的结果项添加点击事件
+            document.querySelectorAll('.result-item.clickable').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    // 如果点击的是链接，不触发跳转
+                    if (e.target.tagName === 'A') {
+                        return;
+                    }
+                    const tgLink = this.getAttribute('data-tg-link');
+                    if (tgLink) {
+                        window.open(tgLink, '_blank');
+                    }
+                });
+            });
+        }
+
+        function highlightText(text, query) {
+            if (!query) return text;
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<mark style="background: #ffeb3b; padding: 2px 4px; border-radius: 3px;">$1</mark>');
+        }
+
+        // 绑定事件
+        searchButton.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    </script>
+</body>
+</html>
+
