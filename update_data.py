@@ -7,7 +7,7 @@ import os
 import shutil
 from datetime import datetime
 from typing import List, Dict, Any
-from search import load_tg_messages, extract_text_from_message
+from search import load_tg_messages, extract_text_from_message, extract_urls_from_text, should_exclude_url
 
 # 数据文件路径
 TG_DATA_FILE = "ChatExport_2025-12-06/result.json"
@@ -19,7 +19,7 @@ def load_existing_data() -> Dict[int, Dict[str, Any]]:
     """加载现有数据，返回以消息 ID 为键的字典"""
     existing = {}
     
-    # 从 JSONL 加载
+    # 从 JSONL 加载所有数据（包括 Twitter 和 Telegram）
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             for line in f:
@@ -28,16 +28,18 @@ def load_existing_data() -> Dict[int, Dict[str, Any]]:
                     continue
                 try:
                     item = json.loads(line)
-                    if item.get("source") == "tg" and item.get("id"):
+                    # 加载所有有 ID 的数据，不仅仅是 Telegram
+                    if item.get("id"):
                         existing[item["id"]] = item
                 except json.JSONDecodeError:
                     continue
     
-    # 从 Telegram JSON 加载
-    tg_items = load_tg_messages()
-    for item in tg_items:
-        if item.get("id"):
-            existing[item["id"]] = item
+    # 如果 JSONL 为空，从 Telegram JSON 加载（兼容旧数据）
+    if not existing:
+        tg_items = load_tg_messages()
+        for item in tg_items:
+            if item.get("id"):
+                existing[item["id"]] = item
     
     return existing
 
@@ -72,27 +74,38 @@ def merge_new_telegram_export(new_export_path: str) -> int:
             # 生成 Telegram 链接
             tg_link = f"https://t.me/{TG_CHANNEL_USERNAME}/{message_id}" if TG_CHANNEL_USERNAME else ""
             
-            # 提取内容中的链接
-            content_url = ""
+            # 提取内容中的链接（从实体中提取）
+            content_urls = []
             text_entities = msg.get("text_entities", [])
             for entity in text_entities:
                 if entity.get("type") == "link":
-                    content_url = entity.get("text", "")
-                    break
+                    url = entity.get("text", "")
+                    if url and not should_exclude_url(url) and url not in content_urls:
+                        content_urls.append(url)
             
-            if not content_url:
+            # 如果没有从 text_entities 找到，从 text 字段中提取
+            if not content_urls:
                 text_field = msg.get("text", "")
                 if isinstance(text_field, list):
                     for item in text_field:
                         if isinstance(item, dict) and item.get("type") == "link":
-                            content_url = item.get("text", "")
-                            break
+                            url = item.get("text", "")
+                            if url and not should_exclude_url(url) and url not in content_urls:
+                                content_urls.append(url)
+            
+            # 从纯文本中提取 URL（补充提取，已包含过滤）
+            urls_from_text = extract_urls_from_text(text)
+            for url in urls_from_text:
+                if url not in content_urls:
+                    content_urls.append(url)
             
             item = {
                 "source": "tg",
+                "type": "post",
                 "title": channel_name,
                 "content": text,
-                "url": content_url,
+                "url": content_urls[0] if content_urls else "",  # 第一个链接（向后兼容）
+                "urls": content_urls,  # 所有链接列表
                 "tg_link": tg_link,
                 "date": msg.get("date", ""),
                 "id": message_id
@@ -152,12 +165,34 @@ def push_to_github():
     import subprocess
     
     try:
+        # 检查是否有更改
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        if not result.stdout.strip():
+            print("没有更改需要推送")
+            return True
+        
         # 添加文件
-        subprocess.run(["git", "add", DATA_FILE, TG_DATA_FILE], check=True)
+        subprocess.run(
+            ["git", "add", DATA_FILE],
+            check=True,
+            capture_output=True,
+            text=True
+        )
         
         # 提交
-        commit_msg = f"更新数据 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        subprocess.run(["git", "commit", "-m", commit_msg], check=True)
+        commit_msg = f"自动更新数据 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        subprocess.run(
+            ["git", "commit", "-m", commit_msg],
+            check=True,
+            capture_output=True,
+            text=True
+        )
         
         # 推送
         result = subprocess.run(
@@ -167,13 +202,18 @@ def push_to_github():
             check=True
         )
         print("已推送到 GitHub")
-        print(result.stdout)
         return True
     except subprocess.CalledProcessError as e:
-        print(f"Git 操作失败: {e.stderr}")
+        # 如果没有更改，不算错误
+        if "nothing to commit" in str(e.stderr) or "nothing to commit" in str(e.stdout):
+            return True
+        print(f"Git 操作失败: {e.stderr if e.stderr else e.stdout}")
         return False
     except FileNotFoundError:
         print("Git 未安装或未初始化仓库")
+        return False
+    except Exception as e:
+        print(f"推送时出错: {e}")
         return False
 
 

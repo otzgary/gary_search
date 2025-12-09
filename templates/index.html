@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>内容搜索</title>
+    <title>Search Gary's Twitter and Telegram</title>
     <style>
         * {
             margin: 0;
@@ -13,9 +13,17 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        body.light-theme {
+            background: #ffffff;
+        }
+
+        body.dark-theme {
+            background: #000000;
         }
 
         .container {
@@ -25,27 +33,132 @@
 
         .header {
             text-align: center;
-            color: white;
             margin-bottom: 30px;
+            transition: color 0.3s ease;
+        }
+
+        body.light-theme .header {
+            color: #333;
+        }
+
+        body.dark-theme .header {
+            color: white;
         }
 
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            font-weight: 300;
+        }
+
+        .header-link {
+            color: inherit;
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
+            transition: opacity 0.3s;
+        }
+
+        .header-link:hover {
+            opacity: 0.7;
+        }
+
+        body.light-theme .header h1 {
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        body.dark-theme .header h1 {
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.1);
         }
 
         .header p {
-            opacity: 0.9;
             font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .contact-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .contact-links a {
+            color: inherit;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s;
+            font-size: 0.95em;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        body.light-theme .contact-links a {
+            background: rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        body.light-theme .contact-links a:hover {
+            background: rgba(0,0,0,0.1);
+        }
+
+        body.dark-theme .contact-links a {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        body.dark-theme .contact-links a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 8px;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        body.light-theme .theme-toggle {
+            color: #333;
+        }
+
+        body.dark-theme .theme-toggle {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
         }
 
         .search-box {
-            background: white;
             border-radius: 12px;
             padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        body.light-theme .search-box {
+            background: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        body.dark-theme .search-box {
+            background: #1a1a1a;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
 
         .search-input-wrapper {
@@ -57,10 +170,21 @@
             flex: 1;
             padding: 15px 20px;
             font-size: 16px;
-            border: 2px solid #e0e0e0;
             border-radius: 8px;
             outline: none;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
+        }
+
+        body.light-theme #searchInput {
+            border: 2px solid #e0e0e0;
+            background: white;
+            color: #333;
+        }
+
+        body.dark-theme #searchInput {
+            border: 2px solid #444;
+            background: #2a2a2a;
+            color: #fff;
         }
 
         #searchInput:focus {
@@ -69,18 +193,30 @@
 
         #searchButton {
             padding: 15px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s;
+        }
+
+        body.light-theme #searchButton {
+            background: #000000;
+        }
+
+        body.dark-theme #searchButton {
+            background: #ffffff;
+            color: #000000;
         }
 
         #searchButton:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        body.dark-theme #searchButton:hover {
+            box-shadow: 0 5px 15px rgba(255,255,255,0.2);
         }
 
         #searchButton:active {
@@ -89,44 +225,80 @@
 
         .stats {
             text-align: center;
-            color: rgba(255,255,255,0.9);
             margin-bottom: 20px;
             font-size: 0.95em;
+            transition: color 0.3s ease;
+        }
+
+        body.light-theme .stats {
+            color: #666;
+        }
+
+        body.dark-theme .stats {
+            color: rgba(255,255,255,0.8);
         }
 
         .results {
-            background: white;
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             min-height: 200px;
+            transition: all 0.3s ease;
+        }
+
+        body.light-theme .results {
+            background: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        body.dark-theme .results {
+            background: #1a1a1a;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
 
         .results-header {
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
-            color: #333;
+            border-bottom: 2px solid;
             font-size: 1.2em;
+            transition: all 0.3s;
+        }
+
+        body.light-theme .results-header {
+            border-bottom-color: #f0f0f0;
+            color: #333;
+        }
+
+        body.dark-theme .results-header {
+            border-bottom-color: #444;
+            color: #fff;
         }
 
         .result-item {
             padding: 20px;
             margin-bottom: 20px;
             border-left: 4px solid #667eea;
-            background: #f9f9f9;
             border-radius: 8px;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
+        }
+
+        body.light-theme .result-item {
+            background: #f9f9f9;
+        }
+
+        body.dark-theme .result-item {
+            background: #2a2a2a;
         }
 
         .result-item.clickable {
             cursor: pointer;
         }
 
-        .result-item.clickable:hover {
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        body.light-theme .result-item.clickable:hover {
             background: #f0f0f0;
+        }
+
+        body.dark-theme .result-item.clickable:hover {
+            background: #333;
         }
 
         .result-item:not(.clickable):hover {
@@ -148,22 +320,46 @@
         .result-title {
             font-size: 1.1em;
             font-weight: bold;
-            color: #333;
             margin-bottom: 8px;
+            transition: color 0.3s;
+        }
+
+        body.light-theme .result-title {
+            color: #333;
+        }
+
+        body.dark-theme .result-title {
+            color: #fff;
         }
 
         .result-date {
-            color: #666;
             font-size: 0.9em;
             margin-bottom: 10px;
+            transition: color 0.3s;
+        }
+
+        body.light-theme .result-date {
+            color: #666;
+        }
+
+        body.dark-theme .result-date {
+            color: #999;
         }
 
         .result-content {
-            color: #555;
             line-height: 1.6;
             margin-bottom: 10px;
             white-space: pre-wrap;
             word-wrap: break-word;
+            transition: color 0.3s;
+        }
+
+        body.light-theme .result-content {
+            color: #555;
+        }
+
+        body.dark-theme .result-content {
+            color: #ccc;
         }
 
         .result-url {
@@ -174,10 +370,33 @@
             color: #667eea;
             text-decoration: none;
             font-size: 0.9em;
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        body.light-theme .result-url a {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        body.dark-theme .result-url a {
+            background: rgba(102, 126, 234, 0.2);
         }
 
         .result-url a:hover {
             text-decoration: underline;
+            transform: translateY(-1px);
+        }
+
+        body.light-theme .result-url a:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        body.dark-theme .result-url a:hover {
+            background: rgba(102, 126, 234, 0.3);
         }
 
         .tg-link-hint {
@@ -187,22 +406,71 @@
             font-weight: 500;
         }
 
-        .result-item.clickable .tg-link-hint::before {
-            content: "👉 点击跳转到 Telegram 消息";
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid;
+        }
+
+        body.light-theme .filter-btn {
+            background: #f0f0f0;
+            border-color: #e0e0e0;
+            color: #666;
+        }
+
+        body.light-theme .filter-btn:hover {
+            background: #e0e0e0;
+            border-color: #667eea;
+        }
+
+        body.dark-theme .filter-btn {
+            background: #2a2a2a;
+            border-color: #444;
+            color: #ccc;
+        }
+
+        body.dark-theme .filter-btn:hover {
+            background: #333;
+            border-color: #667eea;
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
         }
 
         .no-results {
             text-align: center;
-            color: #999;
             padding: 40px;
             font-size: 1.1em;
+            transition: color 0.3s;
+        }
+
+        body.light-theme .no-results {
+            color: #999;
+        }
+
+        body.dark-theme .no-results {
+            color: #666;
         }
 
         .loading {
             text-align: center;
-            color: #667eea;
             padding: 40px;
             font-size: 1.1em;
+            color: #667eea;
         }
 
         .loading::after {
@@ -219,13 +487,14 @@
 </head>
 <body>
     <div class="container">
+        <button class="theme-toggle" id="themeToggle" title="Toggle Theme"></button>
+        
         <div class="header">
-            <h1>🔍 内容搜索</h1>
-            <p>搜索你的 Telegram 和 Twitter 内容</p>
+            <h1>search <a href="https://twitter.com/garyintern" target="_blank" class="header-link">gary's twitter</a> and <a href="https://t.me/gary10x" target="_blank" class="header-link">telegram channel</a></h1>
         </div>
 
         <div class="stats">
-            已加载 <strong>{{ total_count }}</strong> 条内容
+            Loaded <strong>{{ total_count }}</strong> items
         </div>
 
         <div class="search-box">
@@ -233,16 +502,23 @@
                 <input 
                     type="text" 
                     id="searchInput" 
-                    placeholder="输入关键词搜索..." 
+                    placeholder="Enter keywords to search..." 
                     autocomplete="off"
                 >
-                <button id="searchButton">搜索</button>
+                <button id="searchButton">Search</button>
+            </div>
+            <div class="filter-buttons" id="filterButtons">
+                <button class="filter-btn active" data-type="all">All</button>
+                <button class="filter-btn" data-type="tweet">Tweet</button>
+                <button class="filter-btn" data-type="reply">Reply</button>
+                <button class="filter-btn" data-type="retweet">Retweet</button>
+                <button class="filter-btn" data-type="post">Telegram</button>
             </div>
         </div>
 
         <div class="results" id="results">
             <div class="no-results">
-                输入关键词开始搜索
+                Enter keywords to start searching
             </div>
         </div>
     </div>
@@ -251,35 +527,37 @@
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
         const resultsDiv = document.getElementById('results');
+        let currentFilter = 'all';
 
         function performSearch() {
             const query = searchInput.value.trim();
             
             if (!query) {
-                resultsDiv.innerHTML = '<div class="no-results">请输入搜索关键词</div>';
+                resultsDiv.innerHTML = '<div class="no-results">Please enter search keywords</div>';
                 return;
             }
 
-            resultsDiv.innerHTML = '<div class="loading">正在搜索</div>';
+            resultsDiv.innerHTML = '<div class="loading">Searching</div>';
 
-            fetch(`/api/search?q=${encodeURIComponent(query)}`)
+            const url = `/api/search?q=${encodeURIComponent(query)}${currentFilter !== 'all' ? '&type=' + currentFilter : ''}`;
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     displayResults(data.results, data.count, query);
                 })
                 .catch(error => {
-                    resultsDiv.innerHTML = '<div class="no-results">搜索出错，请重试</div>';
+                    resultsDiv.innerHTML = '<div class="no-results">Search error, please try again</div>';
                     console.error('Error:', error);
                 });
         }
 
         function displayResults(results, count, query) {
             if (count === 0) {
-                resultsDiv.innerHTML = '<div class="no-results">没有找到相关结果</div>';
+                resultsDiv.innerHTML = '<div class="no-results">No results found</div>';
                 return;
             }
 
-            let html = `<div class="results-header">找到 <strong>${count}</strong> 条结果</div>`;
+            let html = `<div class="results-header">Found <strong>${count}</strong> results</div>`;
 
             results.forEach((item, index) => {
                 const content = item.content.length > 500 
@@ -287,18 +565,44 @@
                     : item.content;
                 
                 const highlightedContent = highlightText(content, query);
-                const hasTgLink = item.tg_link && item.tg_link.trim() !== '';
-                const clickableClass = hasTgLink ? 'clickable' : '';
-                const tgLinkAttr = hasTgLink ? `data-tg-link="${item.tg_link}"` : '';
+                const hasLink = item.tg_link && item.tg_link.trim() !== '';
+                const linkUrl = hasLink ? item.tg_link : '';
+                
+                // 确定类型标签和链接文本
+                let typeLabel = '';
+                let linkText = '';
+                
+                if (item.source === 'twitter') {
+                    // Twitter 类型标签
+                    if (item.type === 'reply') {
+                        typeLabel = 'Reply';
+                    } else if (item.type === 'retweet') {
+                        typeLabel = 'Retweet';
+                    } else if (item.type === 'quote') {
+                        typeLabel = 'Quote';
+                    } else {
+                        typeLabel = 'Tweet';
+                    }
+                    // Twitter 链接文本
+                    if (hasLink) {
+                        linkText = 'View Twitter post';
+                    }
+                } else if (item.source === 'tg') {
+                    typeLabel = 'Telegram';
+                    // Telegram 链接文本
+                    if (hasLink) {
+                        linkText = 'Go to Telegram message';
+                    }
+                }
                 
                 html += `
-                    <div class="result-item ${clickableClass}" ${tgLinkAttr}>
-                        <span class="result-source">${item.source.toUpperCase()}</span>
+                    <div class="result-item ${linkUrl ? 'clickable' : ''}" ${linkUrl ? `data-link="${linkUrl}"` : ''}>
+                        <span class="result-source">${typeLabel || item.source.toUpperCase()}</span>
                         <div class="result-title">${item.title}</div>
-                        ${item.date ? `<div class="result-date">📅 ${item.date}</div>` : ''}
+                        ${item.date ? `<div class="result-date">${item.date}</div>` : ''}
                         <div class="result-content">${highlightedContent}</div>
-                        ${item.url ? `<div class="result-url"><a href="${item.url}" target="_blank" onclick="event.stopPropagation()">🔗 ${item.url}</a></div>` : ''}
-                        ${hasTgLink ? `<div class="tg-link-hint"></div>` : ''}
+                        ${item.urls && item.urls.length > 0 ? `<div class="result-url">${item.urls.map(url => `<a href="${url}" target="_blank" onclick="event.stopPropagation()">${url}</a>`).join('<br>')}</div>` : ''}
+                        ${linkUrl ? `<div class="tg-link-hint">${linkText}</div>` : ''}
                     </div>
                 `;
             });
@@ -312,9 +616,9 @@
                     if (e.target.tagName === 'A') {
                         return;
                     }
-                    const tgLink = this.getAttribute('data-tg-link');
-                    if (tgLink) {
-                        window.open(tgLink, '_blank');
+                    const link = this.getAttribute('data-link');
+                    if (link) {
+                        window.open(link, '_blank');
                     }
                 });
             });
@@ -326,12 +630,48 @@
             return text.replace(regex, '<mark style="background: #ffeb3b; padding: 2px 4px; border-radius: 3px;">$1</mark>');
         }
 
-        // 绑定事件
+        // 绑定搜索事件
         searchButton.addEventListener('click', performSearch);
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 performSearch();
             }
+        });
+
+        // 绑定筛选按钮事件
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 更新活动状态
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 更新当前筛选
+                currentFilter = this.getAttribute('data-type');
+                
+                // 如果有搜索关键词，重新搜索
+                if (searchInput.value.trim()) {
+                    performSearch();
+                }
+            });
+        });
+
+        // 主题切换功能
+        const themeToggle = document.getElementById('themeToggle');
+        let currentTheme = localStorage.getItem('theme') || 'light';
+        
+        function setTheme(theme) {
+            document.body.className = theme + '-theme';
+            localStorage.setItem('theme', theme);
+            themeToggle.textContent = theme === 'light' ? 'Dark' : 'Light';
+        }
+        
+        // 初始化主题
+        setTheme(currentTheme);
+        
+        // 切换主题
+        themeToggle.addEventListener('click', function() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(currentTheme);
         });
     </script>
 </body>

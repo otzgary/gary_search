@@ -30,7 +30,7 @@ pip3 install -r requirements.txt
 python3 app.py
 ```
 
-然后在浏览器打开：http://127.0.0.1:5000
+然后在浏览器打开：http://127.0.0.1:8080
 
 ### 更新数据
 

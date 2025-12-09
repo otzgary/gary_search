@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from typing import List, Dict, Any
 
 # 数据文件路径
@@ -27,6 +28,49 @@ def extract_text_from_message(text_field: Any) -> str:
                     result.append(item["text"])
         return "".join(result)
     return ""
+
+
+def should_exclude_url(url: str) -> bool:
+    """判断是否应该排除某个 URL"""
+    if not url:
+        return True
+    
+    url_lower = url.lower()
+    
+    # 排除 Twitter/X 相关链接
+    if any(domain in url_lower for domain in [
+        'twitter.com', 'x.com', 't.co', 'twitter.com/i/web'
+    ]):
+        return True
+    
+    # 排除 Telegram 链接
+    if 't.me' in url_lower:
+        return True
+    
+    return False
+
+
+def extract_urls_from_text(text: str) -> List[str]:
+    """从文本中提取所有 URL，并过滤掉不需要的链接"""
+    if not text:
+        return []
+    
+    # URL 正则表达式模式
+    url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+[^\s<>"{}|\\^`\[\].,;:!?]'
+    urls = re.findall(url_pattern, text)
+    
+    # 去重并保持顺序，同时过滤不需要的链接
+    seen = set()
+    unique_urls = []
+    for url in urls:
+        # 排除 Twitter/Telegram 等不需要的链接
+        if should_exclude_url(url):
+            continue
+        if url not in seen:
+            seen.add(url)
+            unique_urls.append(url)
+    
+    return unique_urls
 
 
 def load_tg_messages() -> List[Dict[str, Any]]:
@@ -81,28 +125,38 @@ def load_tg_messages() -> List[Dict[str, Any]]:
                         # 如果转换失败，尝试直接使用
                         tg_link = f"https://t.me/c/{channel_id}/{message_id}"
             
-            # 提取消息内容中的链接（如果有）
-            content_url = ""
+            # 提取消息内容中的链接（从实体中提取）
+            content_urls = []
             text_entities = msg.get("text_entities", [])
             for entity in text_entities:
                 if entity.get("type") == "link":
-                    content_url = entity.get("text", "")
-                    break
+                    url = entity.get("text", "")
+                    if url and not should_exclude_url(url) and url not in content_urls:
+                        content_urls.append(url)
             
             # 如果没有从 text_entities 找到，从 text 字段中提取
-            if not content_url:
+            if not content_urls:
                 text_field = msg.get("text", "")
                 if isinstance(text_field, list):
                     for item in text_field:
                         if isinstance(item, dict) and item.get("type") == "link":
-                            content_url = item.get("text", "")
-                            break
+                            url = item.get("text", "")
+                            if url and not should_exclude_url(url) and url not in content_urls:
+                                content_urls.append(url)
+            
+            # 从纯文本中提取 URL（补充提取，已包含过滤）
+            urls_from_text = extract_urls_from_text(text)
+            for url in urls_from_text:
+                if url not in content_urls:
+                    content_urls.append(url)
             
             item = {
                 "source": "tg",
+                "type": "post",  # Telegram 帖子
                 "title": channel_name,
                 "content": text,
-                "url": content_url,  # 消息内容中的链接
+                "url": content_urls[0] if content_urls else "",  # 第一个链接（向后兼容）
+                "urls": content_urls,  # 所有链接列表
                 "tg_link": tg_link,  # Telegram 消息链接
                 "date": msg.get("date", ""),
                 "id": message_id
